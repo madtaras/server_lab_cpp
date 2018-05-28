@@ -35,8 +35,14 @@ void connect_handler(const boost::system::error_code &ec)
     if (!ec)
     {
         tcp_socket.async_read_some(buffer(bytes), read_handler);
-        std::string tmp = command;
-        // TODO: if command_arg - send it too
+        std::string tmp;
+
+        if (command_arg) {
+            tmp = command + std::string(" ") + command_arg;
+        } else {
+            tmp = command;
+        }
+
         async_write(tcp_socket, buffer(tmp), write_handler);
     }
 }

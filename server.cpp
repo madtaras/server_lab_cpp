@@ -27,6 +27,29 @@ std::string getCurrentDate()
     return std::string(cptime);
 }
 
+int countWords(const char* str)
+{
+    bool inSpaces = true;
+    int numWords = 0;
+
+    while (*str != NULL)
+    {
+        if (std::isspace(*str))
+        {
+            inSpaces = true;
+        }
+        else if (inSpaces)
+        {
+            numWords++;
+            inSpaces = false;
+        }
+
+        ++str;
+    }
+
+    return numWords;
+}
+
 void write_handler(const boost::system::error_code &ec,
                    std::size_t bytes_transferred)
 {
@@ -53,9 +76,9 @@ void read_handler(const boost::system::error_code &ec,
             tmp = (std::string) mbstr + "\n";
         } else if (command == "h") {
             tmp = "Hello\n";
-        } else if (command == "m") {
-            // TODO: handle message
-            tmp = "other\n";
+        } else {
+            // -1 because removing the command itself from count
+            tmp = std::to_string(countWords(bytes.data()) - 1) + "\n";
         }
 
         async_write(_sockets[_sockets.size() - 1], buffer(tmp), write_handler);
