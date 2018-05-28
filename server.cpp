@@ -19,6 +19,14 @@ std::array<char, 4096> bytes;
 std::vector<tcp::socket> _sockets;
 void accept_handler(const boost::system::error_code &ec);
 
+std::string getCurrentDate()
+{
+    char cptime[50];
+    time_t now = time(NULL);
+    strftime(cptime, 50, "%b. %d, %Y", localtime(&now));
+    return std::string(cptime);
+}
+
 void write_handler(const boost::system::error_code &ec,
                    std::size_t bytes_transferred)
 {
@@ -33,6 +41,24 @@ void read_handler(const boost::system::error_code &ec,
     if (!ec)
     {
         std::cout.write(bytes.data(), bytes_transferred);
+        std::string tmp;
+        std::string command (bytes.data());
+
+        if (command == "d") {
+            tmp = getCurrentDate() + "\n";
+        } else if (command == "t") {
+            std::time_t t = std::time(nullptr);
+            char mbstr[100];
+            std::strftime(mbstr, sizeof(mbstr), "%I:%M:%S", std::localtime(&t));
+            tmp = (std::string) mbstr + "\n";
+        } else if (command == "h") {
+            tmp = "Hello\n";
+        } else if (command == "m") {
+            // TODO: handle message
+            tmp = "other\n";
+        }
+
+        async_write(_sockets[_sockets.size() - 1], buffer(tmp), write_handler);
     }
 }
 
@@ -43,16 +69,7 @@ void accept_handler(const boost::system::error_code &ec)
     if (!ec)
     {
         _sockets.push_back(std::move(tcp_socket));
-
-        // Send data to all clients to calc
-        if (_sockets.size() == 3) {
-            for(int i = 0; i < _sockets.size(); i++){
-                std::string tmp = std::to_string(i) + "\n";
-                async_write(_sockets[i], buffer(tmp), write_handler);
-
-                _sockets[i].async_read_some(buffer(bytes), read_handler);
-            }
-        }
+        _sockets[_sockets.size() - 1].async_read_some(buffer(bytes), read_handler);
     }
 }
 

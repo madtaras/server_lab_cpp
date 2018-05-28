@@ -13,6 +13,8 @@ io_service ioservice;
 tcp::resolver resolv{ioservice};
 tcp::socket tcp_socket{ioservice};
 std::array<char, 4096> bytes;
+char* command;
+char* command_arg;
 
 void write_handler(const boost::system::error_code &ec,
                    std::size_t bytes_transferred)
@@ -25,11 +27,6 @@ void read_handler(const boost::system::error_code &ec,
     if (!ec)
     {
         std::cout.write(bytes.data(), bytes_transferred);
-
-        std::string tmp = "Taras, all good!\n";
-        async_write(tcp_socket, buffer(tmp), write_handler);
-
-        tcp_socket.async_read_some(buffer(bytes), read_handler);
     }
 }
 
@@ -38,6 +35,9 @@ void connect_handler(const boost::system::error_code &ec)
     if (!ec)
     {
         tcp_socket.async_read_some(buffer(bytes), read_handler);
+        std::string tmp = command;
+        // TODO: if command_arg - send it too
+        async_write(tcp_socket, buffer(tmp), write_handler);
     }
 }
 
@@ -48,9 +48,13 @@ void resolve_handler(const boost::system::error_code &ec,
         tcp_socket.async_connect(*it, connect_handler);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    tcp::resolver::query q{"10.10.224.191", "2014"};
+    command = argv[2];
+    if (argc == 4) {
+        command_arg = argv[3];
+    }
+    tcp::resolver::query q{argv[1], "2014"};
     resolv.async_resolve(q, resolve_handler);
     ioservice.run();
 }
